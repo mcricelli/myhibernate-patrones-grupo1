@@ -11,10 +11,10 @@ public class Promocion {
 
     @Id
     @Column(name="id_promocion")
-    private int idPromocion;
+    public int idPromocion;
 
     @Column(name="descripcion")
-    private String descripcion;
+    public String descripcion;
 
     public int getIdPromocion() {
         return idPromocion;

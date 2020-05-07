@@ -11,16 +11,16 @@ public class Proveedor
 {
    @Id
    @Column(name="id_proveedor")
-   private int idProveedor;
+   public int idProveedor;
    
    @Column(name="empresa")
-   private String empresa;
+   public String empresa;
 
    @Column(name="contacto")
-   private String contacto;
+   public String contacto;
 
    @Column(name="direccion")
-   private String direccion;
+   public String direccion;
 
    public int getIdProveedor() {
       return idProveedor;

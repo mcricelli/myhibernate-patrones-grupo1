@@ -31,9 +31,5 @@ public class Demo
       {
          System.out.println(px.getDescripcion()+", "+px.getProveedor().getEmpresa());         
       }
-      
-      
-      
-      
    }
 }

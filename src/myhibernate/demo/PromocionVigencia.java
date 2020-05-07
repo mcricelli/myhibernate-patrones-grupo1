@@ -14,16 +14,16 @@ public class PromocionVigencia {
 
     @Id
     @Column(name="id_promocion_vigencia")
-    private int idPromocionVigencia;
+    public int idPromocionVigencia;
 
     @JoinColumn(name="promocion")
-    private Promocion promocion;
+    public Promocion promocion;
 
     @Column(name="fecha_inicio")
-    private Date fechaInicio;
+    public Date fechaInicio;
 
     @Column(name="fecha_fin")
-    private Date fechaFin;
+    public Date fechaFin;
 
     public int getIdPromocionVigencia() {
         return idPromocionVigencia;

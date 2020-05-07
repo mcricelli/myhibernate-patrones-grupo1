@@ -13,29 +13,29 @@ public class Producto
 {
    @Id
    @Column(name="id_producto")
-   private int idProducto;
+   public int idProducto;
    
    @Column(name="descripcion")
-   private String descripcion;
+   public String descripcion;
 
    @ManyToOne
    @JoinColumn(name="id_proveedor")
-   private Proveedor proveedor;
+   public Proveedor proveedor;
 
    @JoinColumn(name="id_categoria")
-   private Categoria categoria;
+   public Categoria categoria;
 
    @Column(name="precio_unitario")
-   private double precioUnitario;
+   public double precioUnitario;
 
    @Column(name="unidades_stock")
-   private int unidadesStock;
+   public int unidadesStock;
 
    @Column(name="unidades_reposicion")
-   private int unidadesReposicion;
+   public int unidadesReposicion;
 
    @Column(name="flg_discontinuo")
-   private int flgDiscontinuo;
+   public int flgDiscontinuo;
 
    public int getIdProducto() {
       return idProducto;
