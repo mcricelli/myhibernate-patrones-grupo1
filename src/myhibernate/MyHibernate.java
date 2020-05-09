@@ -84,6 +84,7 @@ public class MyHibernate {
                 // caso campo es un JoinColumn
                 Object objetoJoin = null;
                 try {
+                    // instanciar un objeto nuevo y llenar todos los campos
                     objetoJoin = field.getType().newInstance();
                     for (Field fieldObjetoJoin : objetoJoin.getClass().getFields()) {
                         Object campoObjetoJoin = obtenerValor(fieldObjetoJoin, rs);
@@ -151,6 +152,18 @@ public class MyHibernate {
                 throwables.printStackTrace();
             }
 
+        } else if(field.isAnnotationPresent(JoinColumn.class)){
+            String nombreColumna = field.getAnnotation(JoinColumn.class).name();
+            int foreignKey = -1;
+            try {
+                foreignKey = rs.getInt(nombreColumna);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+            // ojo, aca es recursivo y puede entrar en un bucle infinito si dos tablas tienen foreign keys que apuntan
+            // una a la otra. Una solucion podria ser lazy loading, es decir esperar a llamar a find de nuevo hasta que
+            // se acceda a un campo que lo necesite
+            return find(tipoField, foreignKey);
         }
         return null;
     }
