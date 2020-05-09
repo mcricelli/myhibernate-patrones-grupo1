@@ -163,7 +163,8 @@ public class MyHibernate {
             // ojo, aca es recursivo y puede entrar en un bucle infinito si dos tablas tienen foreign keys que apuntan
             // una a la otra. Una solucion podria ser lazy loading, es decir esperar a llamar a find de nuevo hasta que
             // se acceda a un campo que lo necesite
-            return find(tipoField, foreignKey);
+            valorColumna = foreignKey != -1 ? find(tipoField, foreignKey) : null;
+            return valorColumna;
         }
         return null;
     }
