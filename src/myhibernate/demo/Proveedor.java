@@ -19,7 +19,7 @@ public class Proveedor
    @Column(name="contacto")
    public String contacto;
 
-   @Column(name="direccion_proveedor")
+   @Column(name="direccion")
    public String direccion;
 
    public int getIdProveedor() {

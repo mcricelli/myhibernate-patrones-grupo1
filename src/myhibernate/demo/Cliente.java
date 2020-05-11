@@ -13,10 +13,10 @@ public class Cliente {
     @Column(name="id_cliente")
     public int idCliente;
 
-    @Column(name="nombre_cliente")
+    @Column(name="nombre")
     public String nombre;
 
-    @Column(name="direccion_cliente")
+    @Column(name="direccion")
     public String direccion;
 
     @JoinColumn(name="id_tipo_cliente")

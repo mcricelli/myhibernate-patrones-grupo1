@@ -12,7 +12,7 @@ public class Categoria {
     @Column(name="id_categoria")
     public int idCategoria;
 
-    @Column(name="descripcion_categoria")
+    @Column(name="descripcion")
     public String descripcion;
 
     public int getIdCategoria() {

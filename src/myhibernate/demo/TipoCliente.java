@@ -12,7 +12,7 @@ public class TipoCliente {
     @Column(name="id_tipo_cliente")
     public int idTipoCliente;
 
-    @Column(name="descripcion_tipo_cliente")
+    @Column(name="descripcion")
     public String descripcion;
 
     public int getIdTipoCliente() {

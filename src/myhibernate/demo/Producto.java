@@ -15,7 +15,7 @@ public class Producto
    @Column(name="id_producto")
    public int idProducto;
    
-   @Column(name="descripcion_producto")
+   @Column(name="descripcion")
    public String descripcion;
 
    @ManyToOne

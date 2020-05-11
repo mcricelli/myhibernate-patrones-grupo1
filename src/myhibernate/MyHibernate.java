@@ -23,12 +23,10 @@ public class MyHibernate {
     public static <T> T find(Class<T> clazz, int id) {
         QueryBuilder qb = new QueryBuilder(clazz, db);
         T objetoRetorno;
-        db.conectar();
 
         QueryResult qr = qb.getQueryFind(id);
         avanzarResultado(qr);
         objetoRetorno = construirObjeto(clazz, qr);
-        db.cerrar();
         return objetoRetorno;
     }
 
@@ -36,8 +34,6 @@ public class MyHibernate {
         QueryBuilder qb = new QueryBuilder(clazz, db);
         List<T> listaObjetosRetorno = new ArrayList<>();
         T objetoRetorno;
-        db.conectar();
-
         QueryResult qr = qb.getQueryFind(-1);
         do{
             avanzarResultado(qr);
@@ -45,7 +41,6 @@ public class MyHibernate {
             if(objetoRetorno != null)
                 listaObjetosRetorno.add(objetoRetorno);
         } while (objetoRetorno != null);
-        db.cerrar();
         return listaObjetosRetorno;
     }
 
@@ -94,7 +89,7 @@ public class MyHibernate {
                 Object campoObjetoRetorno;
                 if(field.isAnnotationPresent(Id.class))
                     campoObjetoRetorno = id;
-                else campoObjetoRetorno = obtenerValor(field, qr);
+                else campoObjetoRetorno = obtenerValor(field, qr, clazz);
                 setearCampo(field, objetoRetorno, campoObjetoRetorno);
             }
             else if (field.isAnnotationPresent(JoinColumn.class)) {
@@ -139,14 +134,15 @@ public class MyHibernate {
         }
     }
 
-    private static Object obtenerValor(Field field, QueryResult qr) {
+    private static Object obtenerValor(Field field, QueryResult qr, Class<?> claseMadre) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         ResultSet rs = qr.rs;
         Class<?> tipoField = field.getType();
+        String tablaClase = claseMadre.getAnnotation(Table.class).name();
         Object valorColumna;
         if (field.isAnnotationPresent(Column.class)) {
             // caso campo es un Column
-            String nombreColumna = field.getAnnotation(Column.class).name();
+            String nombreColumna = tablaClase + "." + field.getAnnotation(Column.class).name();
             String valorColumnaString;
 
             try {

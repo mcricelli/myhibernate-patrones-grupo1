@@ -11,6 +11,7 @@ public class QueryBuilder {
     private final Field[] fields;
     private final String table;
     private final StringBuilder q;
+    private String nombreVariable = "";
     public final StringBuilder joins;
     private final DatabaseManager db;
     private String nombreColumnaID;
@@ -29,10 +30,15 @@ public class QueryBuilder {
         QueryBuilder qb = null;
         try {
             qb = new QueryBuilder(Class.forName(query.split(" ")[1]), db);
+            qb.setNombreVariable(query.split(" ")[2]);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
         return qb;
+    }
+
+    public void setNombreVariable(String nombreVariable) {
+        this.nombreVariable = nombreVariable;
     }
 
     private void analizarCampos(){

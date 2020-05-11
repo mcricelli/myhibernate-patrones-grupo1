@@ -13,7 +13,7 @@ public class Empleado {
     @Column(name="id_empleado")
     public int idEmpleado;
 
-    @Column(name="nombre_empleado")
+    @Column(name="nombre")
     public String nombre;
 
     @JoinColumn(name="id_jefe")

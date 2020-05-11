@@ -10,7 +10,8 @@ public class Demo
    public static void main(String[] args)
    {
       // primer caso: busqueda por id
-      Producto p = MyHibernate.find(Producto.class,1);
+      MyHibernate.db.conectar();
+      DetalleOrden p = MyHibernate.find(DetalleOrden.class,1);
       // System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
 
       // segundo caso: recuperar todas las filas
@@ -31,5 +32,6 @@ public class Demo
       {
          System.out.println(px.getDescripcion()+", "+px.getProveedor().getEmpresa());         
       }
+      MyHibernate.db.cerrar();
    }
 }
