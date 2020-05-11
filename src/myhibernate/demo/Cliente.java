@@ -11,16 +11,16 @@ import myhibernate.ann.JoinColumn;
 public class Cliente {
     @Id
     @Column(name="id_cliente")
-    private int idCliente;
+    public int idCliente;
 
-    @Column(name="nombre")
-    private String nombre;
+    @Column(name="nombre_cliente")
+    public String nombre;
 
-    @Column(name="direccion")
-    private String direccion;
+    @Column(name="direccion_cliente")
+    public String direccion;
 
     @JoinColumn(name="id_tipo_cliente")
-    private TipoCliente tipoCliente;
+    public TipoCliente tipoCliente;
 
     public int getIdCliente() {
         return idCliente;

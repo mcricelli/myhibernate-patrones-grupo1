@@ -7,16 +7,16 @@ import myhibernate.ann.*;
 public class DetalleOrden {
     @Id
     @Column(name="id_detalle_orden")
-    private int idDetalleOrden;
+    public int idDetalleOrden;
 
     @JoinColumn(name="id_orden")
-    private Orden orden;
+    public Orden orden;
 
     @JoinColumn(name="id_producto")
-    private Producto producto;
+    public Producto producto;
 
     @Column(name="cantidad")
-    private int cantidad;
+    public int cantidad;
 
     public int getIdDetalleOrden() {
         return idDetalleOrden;

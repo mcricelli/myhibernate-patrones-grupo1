@@ -11,7 +11,7 @@ public class Demo
    {
       // primer caso: busqueda por id
       Producto p = MyHibernate.find(Producto.class,1);
-      System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
+      // System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
 
       // segundo caso: recuperar todas las filas
       List<Producto> lst = MyHibernate.findAll(Producto.class);

@@ -21,10 +21,12 @@ public class DatabaseManager {
     }
 
     public void conectar(){
-        try {
-            conn = DriverManager.getConnection(DB_URL, USER, PASS);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if(conn == null) {
+            try {
+                conn = DriverManager.getConnection(DB_URL, USER, PASS);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
         }
     }
 
@@ -43,8 +45,9 @@ public class DatabaseManager {
 
         assert conn != null;
         try {
-            st = conn.createStatement();
+            st = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = st.executeQuery(q);
+            System.out.printf("Query: %s\n", q);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         } finally {

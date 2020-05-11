@@ -13,7 +13,7 @@ public class Promocion {
     @Column(name="id_promocion")
     public int idPromocion;
 
-    @Column(name="descripcion")
+    @Column(name="descripcion_promocion")
     public String descripcion;
 
     public int getIdPromocion() {

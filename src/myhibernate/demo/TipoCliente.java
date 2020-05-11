@@ -10,10 +10,10 @@ import myhibernate.ann.Table;
 public class TipoCliente {
     @Id
     @Column(name="id_tipo_cliente")
-    private int idTipoCliente;
+    public int idTipoCliente;
 
-    @Column(name="descripcion")
-    private String descripcion;
+    @Column(name="descripcion_tipo_cliente")
+    public String descripcion;
 
     public int getIdTipoCliente() {
         return idTipoCliente;

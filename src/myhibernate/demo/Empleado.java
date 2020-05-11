@@ -11,13 +11,13 @@ import myhibernate.ann.Table;
 public class Empleado {
     @Id
     @Column(name="id_empleado")
-    private int idEmpleado;
+    public int idEmpleado;
 
-    @Column(name="nombre")
-    private String nombre;
+    @Column(name="nombre_empleado")
+    public String nombre;
 
-    @JoinColumn(name="id_empleado")
-    private Empleado empleado;
+    @JoinColumn(name="id_jefe")
+    public Empleado jefe;
 
     public int getIdEmpleado() {
         return idEmpleado;
@@ -35,11 +35,11 @@ public class Empleado {
         this.nombre = nombre;
     }
 
-    public Empleado getEmpleado() {
-        return empleado;
+    public Empleado getJefe() {
+        return jefe;
     }
 
-    public void setEmpleado(Empleado empleado) {
-        this.empleado = empleado;
+    public void setJefe(Empleado jefe) {
+        this.jefe = jefe;
     }
 }

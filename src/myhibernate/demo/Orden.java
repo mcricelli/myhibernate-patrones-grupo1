@@ -13,19 +13,19 @@ import java.util.Date;
 public class Orden {
     @Id
     @Column(name="id_orden")
-    private int idOrden;
+    public int idOrden;
 
     @JoinColumn(name="id_cliente")
-    private Cliente cliente;
+    public Cliente cliente;
 
     @JoinColumn(name="id_empleado")
-    private Empleado empleado;
+    public Empleado empleado;
 
     @Column(name="fecha_generada")
-    private Date fechaGenerada;
+    public Date fechaGenerada;
 
     @Column(name="fecha_entregada")
-    private Date fechaEntregada;
+    public Date fechaEntregada;
 
     public int getIdOrden() {
         return idOrden;
