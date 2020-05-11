@@ -1,10 +1,10 @@
 package myhibernate;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -12,102 +12,41 @@ import java.lang.System;
 
 import myhibernate.demo.DatabaseManager;
 import myhibernate.ann.*;
+import myhibernate.demo.QueryBuilder;
+import myhibernate.demo.QueryResult;
 
 public class MyHibernate {
+    public static final DatabaseManager db = new DatabaseManager(System.getenv("DB_URL"), "sa", "");
     private static final Class<?> tipoEntero = Integer.TYPE;
     private static final Class<?> tipoDouble = Double.TYPE;
 
     public static <T> T find(Class<T> clazz, int id) {
-        String nombreColumnaID = "";
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        T objetoRetorno = null;
-        DatabaseManager db = new DatabaseManager(System.getenv("DB_URL"), "sa", "");
+        QueryBuilder qb = new QueryBuilder(clazz, db);
+        T objetoRetorno;
         db.conectar();
 
-        // generar una instancia nueva de la clase generica
-        try {
-            objetoRetorno = clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
-        // si no tiene la annotation Entity, no esta mapeada la clase
-        assert clazz.isAnnotationPresent(Entity.class);
-
-        Field[] fields = clazz.getDeclaredFields();
-        String table = clazz.getAnnotation(Table.class).name();
-        StringBuilder q = new StringBuilder(String.format("select * from %s", table));
-
-        for (Field field : fields) {
-            // recorro los annotations hasta que encuentro el Id
-            if (field.isAnnotationPresent(Id.class))
-                nombreColumnaID = field.getAnnotation(Column.class).name();
-
-            // si encuentro un JoinColumn, agrego un join al query
-            if (field.isAnnotationPresent(JoinColumn.class)) {
-                String nombreColumnaIDFK = field.getAnnotation(JoinColumn.class).name();
-                Class<?> tipoField = field.getType();
-                String tablaTipoField = tipoField.getAnnotation(Table.class).name();
-
-                q.append(String.format(" JOIN %s ON %s.%s=%s.%s", tablaTipoField, table, nombreColumnaIDFK, tablaTipoField, nombreColumnaIDFK));
-            }
-        }
-
-        // voy a buscar a la db
-        // String q = String.format("select * from %s where %s=%s", table, nombreColumnaID, id);
-        q.append(String.format(" WHERE %s=%s", nombreColumnaID, id));
-        ResultSet rs = db.query(q.toString());
-        try {
-            rs.next();
-        } catch (SQLException throwables) {
-            // si el resultset esta vacio, deberia fallar
-            throwables.printStackTrace();
-            db.cerrar();
-            return null;
-        }
-
-        for (Field field : fields) {
-            // TODO ver ManyToOne
-            // recorro todos los campos
-            Class<?> tipoField = field.getType();
-
-            if (field.isAnnotationPresent(Column.class)) {
-                // caso campo es un Column
-                Object campoObjetoRetorno = obtenerValor(field, rs);
-                try {
-                    field.set(objetoRetorno, campoObjetoRetorno);
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    e.printStackTrace();
-                }
-
-            } else if (field.isAnnotationPresent(JoinColumn.class)) {
-                // caso campo es un JoinColumn
-                Object objetoJoin = null;
-                try {
-                    // instanciar un objeto nuevo y llenar todos los campos
-                    objetoJoin = field.getType().newInstance();
-                    for (Field fieldObjetoJoin : objetoJoin.getClass().getFields()) {
-                        Object campoObjetoJoin = obtenerValor(fieldObjetoJoin, rs);
-                        fieldObjetoJoin.set(objetoJoin, campoObjetoJoin);
-                    }
-                } catch (InstantiationException | IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-
-                try {
-                    field.set(objetoRetorno, objetoJoin);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        QueryResult qr = qb.getQueryFind(id);
+        avanzarResultado(qr);
+        objetoRetorno = construirObjeto(clazz, qr);
         db.cerrar();
         return objetoRetorno;
     }
 
     public static <T> List<T> findAll(Class<T> clazz) {
-        // PROGRAMAR AQUI
-        return null;
+        QueryBuilder qb = new QueryBuilder(clazz, db);
+        List<T> listaObjetosRetorno = new ArrayList<>();
+        T objetoRetorno;
+        db.conectar();
+
+        QueryResult qr = qb.getQueryFind(-1);
+        do{
+            avanzarResultado(qr);
+            objetoRetorno = construirObjeto(clazz, qr);
+            if(objetoRetorno != null)
+                listaObjetosRetorno.add(objetoRetorno);
+        } while (objetoRetorno != null);
+        db.cerrar();
+        return listaObjetosRetorno;
     }
 
     public static Query createQuery(String hql) {
@@ -115,8 +54,94 @@ public class MyHibernate {
         return null;
     }
 
-    private static Object obtenerValor(Field field, ResultSet rs) {
+
+    public static <T> T instanciarObjetoGenerico(Class <T> clazz){
+        T objetoRetorno = null;
+        try {
+            objetoRetorno = clazz.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return objetoRetorno;
+    }
+
+    public static void setearCampo(Field field, Object objeto, Object valor){
+        try {
+            field.set(objeto, valor);
+        } catch (IllegalAccessException | IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static <T> T construirObjeto(Class<T> clazz, QueryResult qr){
+        T objetoRetorno = instanciarObjetoGenerico(clazz);
+        Field[] fields = clazz.getFields();
+        String nombreColumnaID = "id_" + clazz.getAnnotation(Table.class).name();
+
+        int id;
+        try {
+            id = qr.rs.getInt(nombreColumnaID);
+        } catch (SQLException throwables) {
+            // throwables.printStackTrace();
+            return null;
+        }
+
+        for (Field field : fields) {
+            // recorro todos los campos
+            if (field.isAnnotationPresent(Column.class)) {
+                // caso campo es una columna comun
+                Object campoObjetoRetorno;
+                if(field.isAnnotationPresent(Id.class))
+                    campoObjetoRetorno = id;
+                else campoObjetoRetorno = obtenerValor(field, qr);
+                setearCampo(field, objetoRetorno, campoObjetoRetorno);
+            }
+            else if (field.isAnnotationPresent(JoinColumn.class)) {
+                // caso campo es una FK
+                Object objetoJoin;
+                int idObjetoJoin = id;
+                Class<?> tipoCampo = field.getType();
+                String nombreColumnaJoin = field.getAnnotation(JoinColumn.class).name();
+
+                if(qr.referencianMismaTabla.contains(field)) {
+                    try {
+                        idObjetoJoin = qr.rs.getInt(nombreColumnaJoin);
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                        return null;
+                    }
+                }
+
+                if(idObjetoJoin > 0) {
+                    if(qr.referencianMismaTabla.contains(field))
+                        // este es un caso especial en donde la data que quiero esta en otra tabla que todavia no traje
+                        // y ademas esa tabla tiene un columna con FK que referencia a esa misma tabla
+                        // entonces voy trayendo uno por uno a medida que los voy encontrando
+                        // una alternativa para optimizar esto y tambien evitar recursion infinita seria hacerlo lazy
+                        // y que solo haga el query cuando se accede al campo, pero no da
+                        // asi como esta si por ejemplo dos empleados se tuvieran como jefes el uno al otro, entra en un
+                        // bucle infinito (pero esa situacion no tiene sentido)
+                        objetoJoin = find(tipoCampo, idObjetoJoin);
+                    else objetoJoin = construirObjeto(tipoCampo, qr);
+                } else objetoJoin = null;
+                setearCampo(field, objetoRetorno, objetoJoin);
+            }
+        }
+        return objetoRetorno;
+    }
+
+    public static void avanzarResultado(QueryResult qr){
+        try {
+            qr.rs.next();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+    }
+
+    private static Object obtenerValor(Field field, QueryResult qr) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        ResultSet rs = qr.rs;
         Class<?> tipoField = field.getType();
         Object valorColumna;
         if (field.isAnnotationPresent(Column.class)) {
@@ -143,7 +168,7 @@ public class MyHibernate {
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }
-                } else if (tipoField.isAssignableFrom(tipoDouble)){
+                } else if (tipoField.isAssignableFrom(tipoDouble)) {
                     // el campo es tipo double
                     valorColumna = rs.getDouble(nombreColumna);
                     return valorColumna;
@@ -151,20 +176,6 @@ public class MyHibernate {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-
-        } else if(field.isAnnotationPresent(JoinColumn.class)){
-            String nombreColumna = field.getAnnotation(JoinColumn.class).name();
-            int foreignKey = -1;
-            try {
-                foreignKey = rs.getInt(nombreColumna);
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-            // ojo, aca es recursivo y puede entrar en un bucle infinito si dos tablas tienen foreign keys que apuntan
-            // una a la otra. Una solucion podria ser lazy loading, es decir esperar a llamar a find de nuevo hasta que
-            // se acceda a un campo que lo necesite
-            valorColumna = foreignKey != -1 ? find(tipoField, foreignKey) : null;
-            return valorColumna;
         }
         return null;
     }
