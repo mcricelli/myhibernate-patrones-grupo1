@@ -49,8 +49,7 @@ public class MyHibernate {
         return null;
     }
 
-
-    public static <T> T instanciarObjetoGenerico(Class <T> clazz){
+    private static <T> T instanciarObjetoGenerico(Class <T> clazz){
         T objetoRetorno = null;
         try {
             objetoRetorno = clazz.newInstance();
@@ -60,7 +59,7 @@ public class MyHibernate {
         return objetoRetorno;
     }
 
-    public static void setearCampo(Field field, Object objeto, Object valor){
+    private static void setearCampo(Field field, Object objeto, Object valor){
         try {
             field.set(objeto, valor);
         } catch (IllegalAccessException | IllegalArgumentException e) {
@@ -69,7 +68,7 @@ public class MyHibernate {
 
     }
 
-    public static <T> T construirObjeto(Class<T> clazz, QueryResult qr){
+    private static <T> T construirObjeto(Class<T> clazz, QueryResult qr){
         T objetoRetorno = instanciarObjetoGenerico(clazz);
         Field[] fields = clazz.getFields();
         String nombreColumnaID = "id_" + clazz.getAnnotation(Table.class).name();
@@ -114,7 +113,7 @@ public class MyHibernate {
                         // y ademas esa tabla tiene un columna con FK que referencia a esa misma tabla
                         // entonces voy trayendo uno por uno a medida que los voy encontrando
                         // una alternativa para optimizar esto y tambien evitar recursion infinita seria hacerlo lazy
-                        // y que solo haga el query cuando se accede al campo, pero no da
+                        // y que solo haga el query cuando se accede al campo
                         // asi como esta si por ejemplo dos empleados se tuvieran como jefes el uno al otro, entra en un
                         // bucle infinito (pero esa situacion no tiene sentido)
                         objetoJoin = find(tipoCampo, idObjetoJoin);
@@ -142,7 +141,7 @@ public class MyHibernate {
         Object valorColumna;
         if (field.isAnnotationPresent(Column.class)) {
             // caso campo es un Column
-            String nombreColumna = tablaClase + "." + field.getAnnotation(Column.class).name();
+            String nombreColumna = String.format("%s.%s", tablaClase, field.getAnnotation(Column.class).name());
             String valorColumnaString;
 
             try {

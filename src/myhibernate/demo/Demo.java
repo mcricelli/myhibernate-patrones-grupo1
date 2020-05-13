@@ -11,8 +11,8 @@ public class Demo
    {
       // primer caso: busqueda por id
       MyHibernate.db.conectar();
-      DetalleOrden p = MyHibernate.find(DetalleOrden.class,1);
-      // System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
+      Producto p = MyHibernate.find(Producto.class,1);
+      System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
 
       // segundo caso: recuperar todas las filas
       List<Producto> lst = MyHibernate.findAll(Producto.class);
@@ -22,6 +22,7 @@ public class Demo
       }
       
       // tercer caso: HQL
+      /*
       String hql="";
       hql+="FROM Producto p ";
       hql+="WHERE p.proveedor.empresa=:emp ";
@@ -32,6 +33,7 @@ public class Demo
       {
          System.out.println(px.getDescripcion()+", "+px.getProveedor().getEmpresa());         
       }
+      */
       MyHibernate.db.cerrar();
    }
 }
