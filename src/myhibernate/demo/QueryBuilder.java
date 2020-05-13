@@ -17,6 +17,7 @@ public class QueryBuilder {
     private String nombreColumnaID;
 
     public QueryBuilder(Class<?> clazz, DatabaseManager db){
+        // arma un query SQL en base a la clase dada
         assert clazz.isAnnotationPresent(Entity.class);
         this.db = db;
         fields = clazz.getFields();
@@ -42,6 +43,8 @@ public class QueryBuilder {
     }
 
     private void analizarCampos(){
+        // recorre los campos de la clase y va agregando joins al query a medida que encuentra annotations JoinColumns
+
         for (Field field : fields) {
             // recorro los annotations hasta que encuentro el Id
             if (field.isAnnotationPresent(Id.class))
@@ -70,6 +73,8 @@ public class QueryBuilder {
     }
 
     public QueryResult getQueryFind(int id) {
+        // tira el query armado a la DB y retorna el resultado. Si id = -1, busca toda la tabla en lugar de un id
+        // especifico (para findall)
         QueryResult qr;
         q.append(joins);
         if(id != -1)

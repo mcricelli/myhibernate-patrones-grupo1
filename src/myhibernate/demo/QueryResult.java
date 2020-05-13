@@ -10,6 +10,7 @@ public class QueryResult {
     public String table;
 
     public QueryResult(ResultSet rs, String table, List<Field> referencianMismaTabla) {
+        // resultSet del query + algunos metadatos
         this.rs = rs;
         this.referencianMismaTabla = referencianMismaTabla;
         this.table = table;
