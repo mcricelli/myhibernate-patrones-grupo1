@@ -76,7 +76,7 @@ public class QueryBuilder {
         // tira el query armado a la DB y retorna el resultado. Si id = -1, busca toda la tabla en lugar de un id
         // especifico (para findall)
         QueryResult qr;
-        q.append(joins);
+        // q.append(joins);
         if(id != -1)
             // si le paso id -1, trae la tabla entera (conviene para findAll)
             q.append(String.format(" WHERE %s=%s", nombreColumnaID, id));
