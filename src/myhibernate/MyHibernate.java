@@ -4,16 +4,11 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.lang.System;
 
-import myhibernate.demo.DatabaseManager;
 import myhibernate.ann.*;
-import myhibernate.demo.QueryBuilder;
-import myhibernate.demo.QueryResult;
 
 public class MyHibernate {
     public static final DatabaseManager db = new DatabaseManager(System.getenv("DB_URL"), "sa", "");
@@ -49,16 +44,6 @@ public class MyHibernate {
         return null;
     }
 
-    private static <T> T instanciarObjetoGenerico(Class <T> clazz){
-        T objetoRetorno = null;
-        try {
-            objetoRetorno = clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-        return objetoRetorno;
-    }
-
     private static void setearCampo(Field field, Object objeto, Object valor){
         try {
             field.set(objeto, valor);
@@ -69,7 +54,6 @@ public class MyHibernate {
     }
 
     private static <T> T construirObjeto(Class<T> clazz, QueryResult qr){
-        T objetoRetorno = instanciarObjetoGenerico(clazz);
         Field[] fields = clazz.getFields();
         String nombreColumnaID = "id_" + clazz.getAnnotation(Table.class).name();
 
@@ -80,6 +64,7 @@ public class MyHibernate {
             // throwables.printStackTrace();
             return null;
         }
+        T objetoRetorno = Proxy.generar(clazz);
 
         for (Field field : fields) {
             // recorro todos los campos
@@ -93,36 +78,40 @@ public class MyHibernate {
             }
             else if (field.isAnnotationPresent(JoinColumn.class)) {
                 // caso campo es una FK
-                Object objetoJoin;
-                int idObjetoJoin = id;
+                int idObjetoJoin;
                 Class<?> tipoCampo = field.getType();
+                Object objetoJoin = Proxy.generar(tipoCampo);
                 String nombreColumnaJoin = field.getAnnotation(JoinColumn.class).name();
 
-                if(qr.referencianMismaTabla.contains(field)) {
-                    try {
-                        idObjetoJoin = qr.rs.getInt(nombreColumnaJoin);
-                    } catch (SQLException throwables) {
-                        throwables.printStackTrace();
-                        return null;
-                    }
+                try {
+                    idObjetoJoin = qr.rs.getInt(nombreColumnaJoin);
+                } catch (SQLException throwables) {
+                    System.out.println("Falla al encontrar ID de objeto join en columna: " + nombreColumnaJoin);
+                    throwables.printStackTrace();
+                    idObjetoJoin = -1;
                 }
 
-                if(idObjetoJoin > 0) {
-                    if(qr.referencianMismaTabla.contains(field))
-                        // este es un caso especial en donde la data que quiero esta en otra tabla que todavia no traje
-                        // y ademas esa tabla tiene un columna con FK que referencia a esa misma tabla
-                        // entonces voy trayendo uno por uno a medida que los voy encontrando
-                        // una alternativa para optimizar esto y tambien evitar recursion infinita seria hacerlo lazy
-                        // y que solo haga el query cuando se accede al campo
-                        // asi como esta si por ejemplo dos empleados se tuvieran como jefes el uno al otro, entra en un
-                        // bucle infinito (pero esa situacion no tiene sentido)
-                        objetoJoin = find(tipoCampo, idObjetoJoin);
-                    else objetoJoin = construirObjeto(tipoCampo, qr);
-                } else objetoJoin = null;
+                if (objetoJoin != null && idObjetoJoin > 0)
+                    // se usa el ID del objeto negativo para que el proxy detecte que el objeto todavia no se cargo
+                    // desde la base de datos. Una vez lo carga, lo reemplaza con el ID positivo para indicar que ya
+                    // esta cargado y no volver a cargarlo cada vez que intercepta el metodo
+                    // queda como limitacion que no tolera IDs negativos en la base de datos
+                    encontrarYsetearId(objetoJoin, -idObjetoJoin);
+                else objetoJoin = null;
                 setearCampo(field, objetoRetorno, objetoJoin);
             }
         }
         return objetoRetorno;
+    }
+
+    private static void encontrarYsetearId(Object o, int id) {
+        Field[] fields = o.getClass().getFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Column.class)) {
+                if (field.isAnnotationPresent(Id.class))
+                    setearCampo(field, o, id);
+            }
+        }
     }
 
     public static void avanzarResultado(QueryResult qr){

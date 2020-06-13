@@ -1,4 +1,4 @@
-package myhibernate.demo;
+package myhibernate;
 
 import java.sql.*;
 
