@@ -8,20 +8,12 @@ import java.util.*;
 import java.text.SimpleDateFormat;
 import java.lang.System;
 
-import myhibernate.demo.*;
 import myhibernate.ann.*;
-import net.bytebuddy.ByteBuddy;
-import net.bytebuddy.dynamic.DynamicType;
-import net.bytebuddy.implementation.MethodCall;
-import net.bytebuddy.implementation.SuperMethodCall;
-
-import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class MyHibernate {
     public static final DatabaseManager db = new DatabaseManager(System.getenv("DB_URL"), "sa", "");
     private static final Class<?> tipoEntero = Integer.TYPE;
     private static final Class<?> tipoDouble = Double.TYPE;
-    private static final Map<Class<?>, Class<?>> clasesMejoradas = new HashMap<>();
 
     public static <T> T find(Class<T> clazz, int id) {
         QueryBuilder qb = new QueryBuilder(clazz, db);
@@ -52,39 +44,6 @@ public class MyHibernate {
         return null;
     }
 
-    private static <T> T generarProxy(Class<T> claseBase, int id){
-        DynamicType.Builder<?> builder = new ByteBuddy().subclass(claseBase);
-
-        try {
-            Class<?> claseMejorada = clasesMejoradas.get(claseBase);
-
-            if (claseMejorada == null) {
-                for (Field field : claseBase.getDeclaredFields()) {
-                    if (field.isAnnotationPresent(JoinColumn.class)) {
-                        String name = field.getName();
-                        String camelCaseName = name.substring(0, 1).toUpperCase() + name.substring(1);
-
-                        String getterName = "get" + camelCaseName;
-                        builder = builder.method(named(getterName))
-                                .intercept(
-                                        MethodCall.invoke(Interceptor.class.getMethod("intercept", Field.class, Object.class))
-                                                .with(field).withThis()
-                                                .andThen(SuperMethodCall.INSTANCE)
-                                );
-                    }
-                }
-
-                claseMejorada = builder.make().load(Demo.class.getClassLoader()).getLoaded();
-
-                clasesMejoradas.put(claseBase, claseMejorada);
-            }
-            return (T)claseMejorada.getConstructors()[0].newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     private static void setearCampo(Field field, Object objeto, Object valor){
         try {
             field.set(objeto, valor);
@@ -105,7 +64,7 @@ public class MyHibernate {
             // throwables.printStackTrace();
             return null;
         }
-        T objetoRetorno = generarProxy(clazz, id);
+        T objetoRetorno = Proxy.generar(clazz);
 
         for (Field field : fields) {
             // recorro todos los campos
@@ -119,9 +78,9 @@ public class MyHibernate {
             }
             else if (field.isAnnotationPresent(JoinColumn.class)) {
                 // caso campo es una FK
-                int idObjetoJoin = id;
+                int idObjetoJoin;
                 Class<?> tipoCampo = field.getType();
-                Object objetoJoin = generarProxy(tipoCampo, idObjetoJoin);
+                Object objetoJoin = Proxy.generar(tipoCampo);
                 String nombreColumnaJoin = field.getAnnotation(JoinColumn.class).name();
 
                 try {
