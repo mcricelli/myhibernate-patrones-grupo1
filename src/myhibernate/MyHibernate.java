@@ -4,21 +4,24 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.lang.System;
 
-import myhibernate.demo.DatabaseManager;
+import myhibernate.demo.*;
 import myhibernate.ann.*;
-import myhibernate.demo.QueryBuilder;
-import myhibernate.demo.QueryResult;
+import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.MethodCall;
+import net.bytebuddy.implementation.SuperMethodCall;
+
+import static net.bytebuddy.matcher.ElementMatchers.named;
 
 public class MyHibernate {
     public static final DatabaseManager db = new DatabaseManager(System.getenv("DB_URL"), "sa", "");
     private static final Class<?> tipoEntero = Integer.TYPE;
     private static final Class<?> tipoDouble = Double.TYPE;
+    private static final Map<Class<?>, Class<?>> clasesMejoradas = new HashMap<>();
 
     public static <T> T find(Class<T> clazz, int id) {
         QueryBuilder qb = new QueryBuilder(clazz, db);
@@ -49,14 +52,37 @@ public class MyHibernate {
         return null;
     }
 
-    private static <T> T instanciarObjetoGenerico(Class <T> clazz){
-        T objetoRetorno = null;
+    private static <T> T generarProxy(Class<T> claseBase, int id){
+        DynamicType.Builder<?> builder = new ByteBuddy().subclass(claseBase);
+
         try {
-            objetoRetorno = clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            Class<?> claseMejorada = clasesMejoradas.get(claseBase);
+
+            if (claseMejorada == null) {
+                for (Field field : claseBase.getDeclaredFields()) {
+                    if (field.isAnnotationPresent(JoinColumn.class)) {
+                        String name = field.getName();
+                        String camelCaseName = name.substring(0, 1).toUpperCase() + name.substring(1);
+
+                        String getterName = "get" + camelCaseName;
+                        builder = builder.method(named(getterName))
+                                .intercept(
+                                        MethodCall.invoke(Interceptor.class.getMethod("intercept", Field.class, Object.class))
+                                                .with(field).withThis()
+                                                .andThen(SuperMethodCall.INSTANCE)
+                                );
+                    }
+                }
+
+                claseMejorada = builder.make().load(Demo.class.getClassLoader()).getLoaded();
+
+                clasesMejoradas.put(claseBase, claseMejorada);
+            }
+            return (T)claseMejorada.getConstructors()[0].newInstance();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return objetoRetorno;
+        return null;
     }
 
     private static void setearCampo(Field field, Object objeto, Object valor){
@@ -69,7 +95,6 @@ public class MyHibernate {
     }
 
     private static <T> T construirObjeto(Class<T> clazz, QueryResult qr){
-        T objetoRetorno = instanciarObjetoGenerico(clazz);
         Field[] fields = clazz.getFields();
         String nombreColumnaID = "id_" + clazz.getAnnotation(Table.class).name();
 
@@ -80,6 +105,7 @@ public class MyHibernate {
             // throwables.printStackTrace();
             return null;
         }
+        T objetoRetorno = generarProxy(clazz, id);
 
         for (Field field : fields) {
             // recorro todos los campos
@@ -93,36 +119,36 @@ public class MyHibernate {
             }
             else if (field.isAnnotationPresent(JoinColumn.class)) {
                 // caso campo es una FK
-                Object objetoJoin;
                 int idObjetoJoin = id;
                 Class<?> tipoCampo = field.getType();
+                Object objetoJoin = generarProxy(tipoCampo, idObjetoJoin);
                 String nombreColumnaJoin = field.getAnnotation(JoinColumn.class).name();
 
-                if(qr.referencianMismaTabla.contains(field)) {
-                    try {
-                        idObjetoJoin = qr.rs.getInt(nombreColumnaJoin);
-                    } catch (SQLException throwables) {
-                        throwables.printStackTrace();
-                        return null;
-                    }
+                try {
+                    idObjetoJoin = qr.rs.getInt(nombreColumnaJoin);
+                } catch (SQLException throwables) {
+                    System.out.println("Falla al encontrar ID de objeto join en columna: " + nombreColumnaJoin);
+                    throwables.printStackTrace();
+                    idObjetoJoin = -1;
                 }
 
-                if(idObjetoJoin > 0) {
-                    if(qr.referencianMismaTabla.contains(field))
-                        // este es un caso especial en donde la data que quiero esta en otra tabla que todavia no traje
-                        // y ademas esa tabla tiene un columna con FK que referencia a esa misma tabla
-                        // entonces voy trayendo uno por uno a medida que los voy encontrando
-                        // una alternativa para optimizar esto y tambien evitar recursion infinita seria hacerlo lazy
-                        // y que solo haga el query cuando se accede al campo
-                        // asi como esta si por ejemplo dos empleados se tuvieran como jefes el uno al otro, entra en un
-                        // bucle infinito (pero esa situacion no tiene sentido)
-                        objetoJoin = find(tipoCampo, idObjetoJoin);
-                    else objetoJoin = construirObjeto(tipoCampo, qr);
-                } else objetoJoin = null;
+                if (objetoJoin != null && idObjetoJoin > 0)
+                    encontrarYsetearId(objetoJoin, -idObjetoJoin);
+                else objetoJoin = null;
                 setearCampo(field, objetoRetorno, objetoJoin);
             }
         }
         return objetoRetorno;
+    }
+
+    private static void encontrarYsetearId(Object o, int id) {
+        Field[] fields = o.getClass().getFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(Column.class)) {
+                if (field.isAnnotationPresent(Id.class))
+                    setearCampo(field, o, id);
+            }
+        }
     }
 
     public static void avanzarResultado(QueryResult qr){
