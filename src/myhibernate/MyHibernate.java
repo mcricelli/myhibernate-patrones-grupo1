@@ -133,6 +133,10 @@ public class MyHibernate {
                 }
 
                 if (objetoJoin != null && idObjetoJoin > 0)
+                    // se usa el ID del objeto negativo para que el proxy detecte que el objeto todavia no se cargo
+                    // desde la base de datos. Una vez lo carga, lo reemplaza con el ID positivo para indicar que ya
+                    // esta cargado y no volver a cargarlo cada vez que intercepta el metodo
+                    // queda como limitacion que no tolera IDs negativos en la base de datos
                     encontrarYsetearId(objetoJoin, -idObjetoJoin);
                 else objetoJoin = null;
                 setearCampo(field, objetoRetorno, objetoJoin);
