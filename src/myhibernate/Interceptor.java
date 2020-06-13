@@ -1,4 +1,4 @@
-package myhibernate.demo;
+package myhibernate;
 
 import myhibernate.MyHibernate;
 import myhibernate.ann.Column;
