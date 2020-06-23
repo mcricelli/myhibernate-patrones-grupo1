@@ -5,14 +5,12 @@ import java.sql.ResultSet;
 import java.util.List;
 
 public class QueryResult {
-    public ResultSet rs;
-    public List<Field> referencianMismaTabla;
-    public String table;
+    public final ResultSet rs;
+    public final List<Field> autoReferencias;
 
-    public QueryResult(ResultSet rs, String table, List<Field> referencianMismaTabla) {
+    public QueryResult(ResultSet rs, List<Field> autoReferencias) {
         // resultSet del query + algunos metadatos
         this.rs = rs;
-        this.referencianMismaTabla = referencianMismaTabla;
-        this.table = table;
+        this.autoReferencias = autoReferencias;
     }
 }

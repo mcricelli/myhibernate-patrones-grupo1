@@ -16,7 +16,8 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 public class Proxy {
     private static final Map<Class<?>, Class<?>> clasesMejoradas = new HashMap<>();
 
-    public static <T> T generar(Class<T> claseBase){
+    @SuppressWarnings("unchecked")
+    public static <T> T generar(Class<?> claseBase){
         DynamicType.Builder<?> builder = new ByteBuddy().subclass(claseBase);
         try {
             Class<?> claseMejorada = clasesMejoradas.get(claseBase);

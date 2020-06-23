@@ -1,6 +1,5 @@
 package myhibernate;
 
-import myhibernate.MyHibernate;
 import myhibernate.ann.Column;
 import myhibernate.ann.Id;
 import net.bytebuddy.implementation.bind.annotation.This;

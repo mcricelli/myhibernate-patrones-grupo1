@@ -9,9 +9,11 @@ public class Demo
 {
    public static void main(String[] args)
    {
+
       // primer caso: busqueda por id
       MyHibernate.db.conectar();
-      Producto p = MyHibernate.find(Producto.class,1);
+
+      Producto p = MyHibernate.find(Producto.class,2);
       System.out.println(p.getDescripcion()+", "+p.getProveedor().getEmpresa());
 
       // segundo caso: recuperar todas las filas
@@ -20,20 +22,18 @@ public class Demo
       {
          System.out.println(px.getDescripcion()+", "+px.getProveedor().getEmpresa());         
       }
-      
-      // tercer caso: HQL
-      /*
+
       String hql="";
       hql+="FROM Producto p ";
       hql+="WHERE p.proveedor.empresa=:emp ";
       Query q = MyHibernate.createQuery(hql);
       q.setParameter("emp","Sony");
-      List<Producto> lst2 = q.getResultList();
+      List<Producto> lst2 = q.getResultList(MyHibernate.db);
       for(Producto px:lst2)
       {
          System.out.println(px.getDescripcion()+", "+px.getProveedor().getEmpresa());         
       }
-      */
+
       MyHibernate.db.cerrar();
    }
 }

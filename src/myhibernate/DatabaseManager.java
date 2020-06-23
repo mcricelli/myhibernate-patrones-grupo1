@@ -45,9 +45,9 @@ public class DatabaseManager {
 
         assert conn != null;
         try {
+            System.out.printf("Query: %s\n", q);
             st = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             rs = st.executeQuery(q);
-            System.out.printf("Query: %s\n", q);
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         } finally {
